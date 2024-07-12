@@ -1,0 +1,121 @@
+GRAFICO DISPERCION 
+
+# Instalar y cargar librería ggplot2 si aún no está instalada
+if (!require(ggplot2)) install.packages("ggplot2", dependencies=TRUE)
+library(ggplot2)
+
+# Crear el gráfico de dispersión
+ggplot(dataset, aes(x = NUMERO_CASO, y = ESTADO)) +
+  geom_point(color = "red") +
+  theme_minimal() +
+  labs(title = "Relación entre la Cantidad de Llamadas y el Estado del Caso",
+       x = "Número de Casos",
+       y = "Estado")
+
+GRAFICO BARRAS
+
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Crear el gráfico
+ggplot(dataset, aes(x = DEPARTAMENTO, y = NUMERO_CASO)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Cantidad de Casos por Departamento",
+       x = "Departamento",
+       y = "Número de Casos")
+
+PROYECCIONES A FUTURO 
+
+GRAFICO DE LINEA 
+
+# Configurar el repositorio CRAN
+options(repos = c(CRAN = "https://cran.r-project.org"))
+
+# Instalar y cargar librerías necesarias
+if (!require(forecast)) install.packages("forecast", dependencies=TRUE)
+if (!require(ggplot2)) install.packages("ggplot2", dependencies=TRUE)
+if (!require(lubridate)) install.packages("lubridate", dependencies=TRUE)
+library(forecast)
+library(ggplot2)
+library(lubridate)
+
+# Asegurarse de que FECHA_LLAMADA está en formato Date
+dataset$FECHA_LLAMADA <- as.Date(dataset$FECHA_LLAMADA, format="%Y-%m-%d")
+
+# Crear una serie temporal a partir de los datos
+ts_data <- ts(dataset$NUMERO_CASO, start=c(year(min(dataset$FECHA_LLAMADA)), month(min(dataset$FECHA_LLAMADA))), frequency=12)
+
+# Ajustar un modelo de series temporales y realizar la proyección
+fit <- auto.arima(ts_data)
+forecasted <- forecast(fit, h=12)  # Proyectar 12 periodos al futuro
+
+# Crear un data frame para el gráfico
+forecasted_df <- data.frame(
+  Date = seq(as.Date(max(dataset$FECHA_LLAMADA)) + 1, by="month", length.out=12),
+  Forecast = forecasted$mean
+)
+
+# Gráfico de Línea con Proyecciones
+ggplot(dataset, aes(x = FECHA_LLAMADA, y = NUMERO_CASO)) +
+  geom_line(color = "blue") +
+  geom_line(data = forecasted_df, aes(x = Date, y = Forecast), color = "red") +
+  theme_minimal() +
+  labs(title = "Proyección de Casos a Futuro (Línea)",
+       x = "Fecha de Llamada",
+       y = "Número de Casos")
+
+GRAFICO DE COLUMNAS 
+
+# Configurar el repositorio CRAN
+options(repos = c(CRAN = "https://cran.r-project.org"))
+
+# Instalar y cargar librerías necesarias
+if (!requireNamespace("forecast", quietly = TRUE)) {
+  install.packages("forecast", dependencies=TRUE)
+}
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2", dependencies=TRUE)
+}
+if (!requireNamespace("lubridate", quietly = TRUE)) {
+  install.packages("lubridate", dependencies=TRUE)
+}
+
+library(forecast)
+library(ggplot2)
+library(lubridate)
+
+# Asegurarse de que FECHA_LLAMADA está en formato Date y manejar posibles NA
+dataset$FECHA_LLAMADA <- as.Date(dataset$FECHA_LLAMADA, format="%Y-%m-%d")
+dataset <- dataset[!is.na(dataset$FECHA_LLAMADA) & !is.na(dataset$NUMERO_CASO), ]
+
+# Comprobar el rango de fechas
+min_date <- min(dataset$FECHA_LLAMADA)
+max_date <- max(dataset$FECHA_LLAMADA)
+
+# Crear una serie temporal a partir de los datos si las fechas son válidas
+if (!is.na(min_date) & !is.na(max_date) & min_date < max_date) {
+  ts_data <- ts(dataset$NUMERO_CASO, start=c(year(min_date), month(min_date)), frequency=12)
+  
+  # Ajustar un modelo de series temporales y realizar la proyección
+  fit <- auto.arima(ts_data)
+  forecasted <- forecast(fit, h=12)  # Proyectar 12 periodos al futuro
+  
+  # Crear un data frame para el gráfico
+  forecasted_df <- data.frame(
+    Date = seq(as.Date(max_date) + 1, by="month", length.out=12),
+    Forecast = forecasted$mean
+  )
+  
+  # Gráfico de Barras con Proyecciones
+  ggplot(dataset, aes(x = FECHA_LLAMADA, y = NUMERO_CASO)) +
+    geom_bar(stat = "identity", fill = "blue") +
+    geom_bar(data = forecasted_df, aes(x = Date, y = Forecast), stat = "identity", fill = "red", alpha = 0.5) +
+    theme_minimal() +
+    labs(title = "Proyección de Casos a Futuro (Barras)",
+         x = "Fecha de Llamada",
+         y = "Número de Casos")
+} else {
+  print("Error: Rango de fechas inválido o fechas faltantes en el conjunto de datos.")
+}
+
